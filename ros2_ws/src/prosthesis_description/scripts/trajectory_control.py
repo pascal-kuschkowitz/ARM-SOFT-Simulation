@@ -14,7 +14,7 @@ class TrajectoryControlNode(Node):
     
     def __init__(self):
         super().__init__('trajectory_control')
-
+        self.timer = None
         self.last_joint_states = None
         self.joint_states_subscription_ = self.create_subscription(
             JointState, '/joint_states', self.joint_states_callback, 10
@@ -69,104 +69,147 @@ class TrajectoryControlNode(Node):
         """Publish trajectory directly to controller """    
         self.trajectory_pub.publish(trajectory)
         self.get_logger().info(f"Published: {goal_name}")
-    
-    def send_pose_trajectory(self, joint_updates_dict, goal_name="Pose"):
-        """Send multiple joint targets in one trajectory goal (parallel execution)"""
-        if self.last_joint_states is None:
-            self.get_logger().warn("No joint states received yet")
-        
-        new_positions = list(self.last_joint_states.position)
-        for joint_idx, target_pos in joint_updates_dict.items():
-            if 0 <= joint_idx < len(new_positions):
-                new_positions[joint_idx] = target_pos
-            else:
-                self.get_logger().error(f"Joint index {joint_idx} out of range")
-        
-        trajectory = JointTrajectory()
-        trajectory.joint_names = self.last_joint_states.name
-        point = JointTrajectoryPoint()
-        point.positions = list(new_positions)
-        point.time_from_start = Duration(sec=0, nanosec=0)
-        trajectory.points.append(point)
-        
-        self.send_trajectory(trajectory, goal_name=goal_name)
 
     #----------PREDEFINDED HAND POSES (BATCH/PARALLEL EXECUTION)-------------------------
+    
     def hand_pose_0(self):
         """open hand - all fingers move in parallel"""
-        joint_updates = {}
+        trajectory = JointTrajectory()
+        point_1 = JointTrajectoryPoint()
+        point_1.time_from_start = Duration(sec=0, nanosec=int(2e8))
+
         for i in self.index_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] - 1.2
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0)
         for i in self.middle_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] - 1.2
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0)
         for i in self.ring_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] - 1.2
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0)
         for i in self.little_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] - 1.2
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0)
         # Thumb X
-        joint_updates[self.thumb_indexes[0]] = self.last_joint_states.position[5] - 1.4
-        # Thumb Y
+        trajectory.joint_names.append(self.last_joint_states.name[self.thumb_indexes[0]])
+        point_1.positions.append(0)
+        # Thumb Y 
         for i in self.thumb_indexes[1::]:
-            joint_updates[i] = self.last_joint_states.position[i] - 1
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0)
         
-        self.send_pose_trajectory(joint_updates, goal_name="Hand Open")
+        trajectory.points.append(point_1)
+        self.send_trajectory(trajectory, goal_name="Hand Open")
 
     def hand_pose_1(self):
         """close hand - all fingers move in parallel"""
-        joint_updates = {}
-        for i in self.index_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] + 1.2
-        for i in self.middle_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] + 1.2
-        for i in self.ring_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] + 1.2
-        for i in self.little_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] + 1.2
-        # Thumb X
-        joint_updates[self.thumb_indexes[0]] = self.last_joint_states.position[5] + 1.4
+        trajectory = JointTrajectory()
         
-        self.send_pose_trajectory(joint_updates, goal_name="Hand Closed")
-    
+        # Add all joint names first
+        for i in self.index_indexes:
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+        for i in self.middle_indexes:
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+        for i in self.ring_indexes:
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+        for i in self.little_indexes:
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+        trajectory.joint_names.append(self.last_joint_states.name[self.thumb_indexes[0]])
+        
+        # Point 1: Fingers close, thumb stays neutral
+        point_1 = JointTrajectoryPoint()
+        point_1.time_from_start = Duration(sec=0, nanosec=int(2e8))
+        for i in self.index_indexes:
+            point_1.positions.append(1.2)
+        for i in self.middle_indexes:
+            point_1.positions.append(1.2)
+        for i in self.ring_indexes:
+            point_1.positions.append(1.2)
+        for i in self.little_indexes:
+            point_1.positions.append(1.2)
+        point_1.positions.append(0)  # Thumb X stays neutral
+        trajectory.points.append(point_1)
+        
+        # Point 2: Fingers closed, thumb closes
+        point_2 = JointTrajectoryPoint()
+        point_2.time_from_start = Duration(sec=0, nanosec=int(6e8))
+        for i in self.index_indexes:
+            point_2.positions.append(1.2)
+        for i in self.middle_indexes:
+            point_2.positions.append(1.2)
+        for i in self.ring_indexes:
+            point_2.positions.append(1.2)
+        for i in self.little_indexes:
+            point_2.positions.append(1.2)
+        point_2.positions.append(1.0)  # Thumb X closes
+        trajectory.points.append(point_2)
+
+        self.send_trajectory(trajectory, goal_name="Hand grasp")
+
+
     def hand_pose_2(self):
         """pinch - index and thumb close, others open (parallel execution)"""
-        joint_updates = {}
+        trajectory = JointTrajectory()
+        point_1 = JointTrajectoryPoint()
+        point_1.time_from_start = Duration(sec=0, nanosec=int(2e8))
         for i in self.index_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] + 1.2
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(1.)
         # Thumb Y
         for i in self.thumb_indexes[1::]:
-            joint_updates[i] = self.last_joint_states.position[i] + 1
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0.6)
         for i in self.middle_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] - 1.2
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0)
         for i in self.ring_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] - 1.2
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0)
         for i in self.little_indexes:
-            joint_updates[i] = self.last_joint_states.position[i] - 1.2
-        
-        self.send_pose_trajectory(joint_updates, goal_name="Pinch")
+            trajectory.joint_names.append(self.last_joint_states.name[i])
+            point_1.positions.append(0)
+        trajectory.points.append(point_1)
+        self.send_trajectory(trajectory, goal_name="Pinch")
 
     def hand_pose_3(self):
         """rotate wrist right"""
-        index = self.wrist_indexes[0]
-        joint_updates = {index: self.last_joint_states.position[index] + 1.57}
-        self.send_pose_trajectory(joint_updates, goal_name="Wrist Right")
+        trajectory = JointTrajectory()
+        point_1 = JointTrajectoryPoint()
+        point_1.time_from_start = Duration(sec=0, nanosec=int(2e8))
+        trajectory.joint_names.append(self.last_joint_states.name[self.wrist_indexes[0]])
+        point_1.positions.append(1.57)
+        trajectory.points.append(point_1)
+        self.send_trajectory(trajectory, goal_name="Wrist 90 deg to right")
 
     def hand_pose_4(self):
         """rotate wrist left"""
-        index = self.wrist_indexes[0]
-        joint_updates = {index: self.last_joint_states.position[index] - 1.57}
-        self.send_pose_trajectory(joint_updates, goal_name="Wrist Left")
+        trajectory = JointTrajectory()
+        point_1 = JointTrajectoryPoint()
+        point_1.time_from_start = Duration(sec=0, nanosec=int(2e8))
+        trajectory.joint_names.append(self.last_joint_states.name[self.wrist_indexes[0]])
+        point_1.positions.append(-1.57)
+        trajectory.points.append(point_1)
+        self.send_trajectory(trajectory, goal_name="Wrist 90 deg to left")
 
     def hand_pose_5(self):
         """rotate wrist up"""
-        index = self.wrist_indexes[1]
-        joint_updates = {index: self.last_joint_states.position[index] + 1.57}
-        self.send_pose_trajectory(joint_updates, goal_name="Wrist Up")
+        trajectory = JointTrajectory()
+        point_1 = JointTrajectoryPoint()
+        point_1.time_from_start = Duration(sec=0, nanosec=int(2e8))
+        trajectory.joint_names.append(self.last_joint_states.name[self.wrist_indexes[1]])
+        point_1.positions.append(1.57)
+        trajectory.points.append(point_1)
+        self.send_trajectory(trajectory, goal_name="Wrist 90 deg up")
 
     def hand_pose_6(self):
         """rotate wrist down"""
-        index = self.wrist_indexes[1]
-        joint_updates = {index: self.last_joint_states.position[index] - 1.57}
-        self.send_pose_trajectory(joint_updates, goal_name="Wrist Down")
+        trajectory = JointTrajectory()
+        point_1 = JointTrajectoryPoint()
+        point_1.time_from_start = Duration(sec=0, nanosec=int(2e8))
+        trajectory.joint_names.append(self.last_joint_states.name[self.wrist_indexes[1]])
+        point_1.positions.append(-1.57)
+        trajectory.points.append(point_1)
+        self.send_trajectory(trajectory, goal_name="Wrist 90 deg down")
     #------------------------------------------------------
 
     def handle_arm_delta_goals(self, msg):
