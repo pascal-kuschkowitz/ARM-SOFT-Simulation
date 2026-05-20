@@ -348,7 +348,7 @@
             </link>
         </model>-->
 
-        <model name="cylinder_1">
+       <!-- <model name="cylinder_1">
             <link name="link_cylinder">
             <pose>1 0 0.08 0 0 0</pose>
             <inertial>
@@ -391,7 +391,7 @@
                 </material>
             </visual>
             </link>
-        </model>
+        </model>-->
         
     </world>
 </sdf>

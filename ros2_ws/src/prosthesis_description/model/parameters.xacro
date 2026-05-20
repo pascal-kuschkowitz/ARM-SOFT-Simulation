@@ -100,7 +100,7 @@
 
     <!-- ==== GAZEBO TAGS ==== -->
     <xacro:property name="base_wrist_friction" value="3" />
-    <xacro:property name="palm_fingers_friction" value="100" />
+    <xacro:property name="palm_fingers_friction" value="10" />
     <xacro:property name="rigid_stiffness_default" value="1000000" />
     <xacro:property name="damping_default" value="200" /> 
     <xacro:property name="min_depth_default" value="0.001" />

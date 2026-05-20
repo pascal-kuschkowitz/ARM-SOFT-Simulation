@@ -39,8 +39,8 @@ def generate_launch_description():
                 arguments=[
                     '-topic', 'robot_description',
                     '-name', 'prosthesis',
-                    '-x', '0.',
-                    '-y', '0.', 
+                    '-x', '0.001',
+                    '-y', '-0.002', 
                     '-z', '0.065'
                 ],
                 parameters=[{

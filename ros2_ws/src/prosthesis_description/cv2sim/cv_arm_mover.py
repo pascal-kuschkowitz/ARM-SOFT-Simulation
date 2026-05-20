@@ -73,8 +73,10 @@ class CvArmMoverNode(Node):
         # Create timers only once
         if self.base_timer is None:
             self.base_timer = self.create_timer(3.0, self.publish_base_pose)
+            self.get_logger().info("first timer started")
         if self.hand_timer is None:
-            self.hand_timer = self.create_timer(6.0, self.publish_hand_pose)
+            self.hand_timer = self.create_timer(4.0, self.publish_hand_pose)
+            self.get_logger().info("second timer started")
 
     def publish_hand_pose(self):
 
