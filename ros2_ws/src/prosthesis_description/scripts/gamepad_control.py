@@ -8,7 +8,8 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
 # see joy package documentation at https://docs.ros.org/en/ros2_packages/jazzy/api/joy/index.html
-from std_msgs.msg import Float32MultiArray, Int8
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from std_msgs.msg import Int8
 
 
 class GamepadControlNode(Node):
@@ -22,7 +23,7 @@ class GamepadControlNode(Node):
         
         # Publishers
         self.arm_movement_publisher_ = self.create_publisher(
-            Float32MultiArray, 'arm_mvmt_goals', 10
+            JointTrajectory, 'arm_delta_goals', 10
         )
         self.pose_publisher_ = self.create_publisher(
             Int8, 'pose_goals', 10
@@ -58,20 +59,29 @@ class GamepadControlNode(Node):
         """Handle joystick input"""
         
         if msg.axes[0]:  # Forward/Backward
-            movement_msg = Float32MultiArray()
-            movement_msg.data = [1, msg.axes[0]* self.base_step]
+            movement_msg = JointTrajectory()
+            movement_msg.joint_names.append('joint_base_x')
+            point = JointTrajectoryPoint()
+            point.positions.append(msg.axes[0] * self.base_step)
+            movement_msg.points.append(point)
             self.arm_movement_publisher_.publish(movement_msg)
             self.get_logger().info(f"Sent moving goal of {msg.axes[0]* self.base_step:.3f} m along x axis")
         
         if msg.axes[1]:  # Left/Right
-            movement_msg = Float32MultiArray()
-            movement_msg.data = [0, msg.axes[1] * self.base_step]
+            movement_msg = JointTrajectory()
+            movement_msg.joint_names.append('joint_base_y')
+            point = JointTrajectoryPoint()
+            point.positions.append(msg.axes[1] * self.base_step)
+            movement_msg.points.append(point)
             self.arm_movement_publisher_.publish(movement_msg)
             self.get_logger().info(f"Sent moving goal of {msg.axes[1]* self.base_step:.3f} m along y axis")
 
         if msg.axes[3]: # Up/Down
-            movement_msg = Float32MultiArray()
-            movement_msg.data = [2, msg.axes[3] * self.base_step]
+            movement_msg = JointTrajectory()
+            movement_msg.joint_names.append('joint_base_z')
+            point = JointTrajectoryPoint()
+            point.positions.append(msg.axes[3] * self.base_step)
+            movement_msg.points.append(point)
             self.arm_movement_publisher_.publish(movement_msg)
             self.get_logger().info(f"Sent moving goal of {msg.axes[3]* self.base_step:.3f} m along z axis")
 
@@ -79,22 +89,22 @@ class GamepadControlNode(Node):
             pose_msg = Int8()
             pose_msg.data = 0
             self.pose_publisher_.publish(pose_msg)
-            self.get_logger().info(f"Sent pose number {pose_msg} goal")
+            self.get_logger().info(f"Sent pose number {pose_msg.data} goal")
         elif msg.buttons[1]:  # B button → Close hand
             pose_msg = Int8()
             pose_msg.data = 1
             self.pose_publisher_.publish(pose_msg)
-            self.get_logger().info(f"Sent pose number {pose_msg} goal")
+            self.get_logger().info(f"Sent pose number {pose_msg.data} goal")
         elif msg.buttons[2]:  # X button → Wrist right
             pose_msg = Int8()
             pose_msg.data = 3
             self.pose_publisher_.publish(pose_msg)
-            self.get_logger().info(f"Sent pose number {pose_msg} goal")
+            self.get_logger().info(f"Sent pose number {pose_msg.data} goal")
         elif msg.buttons[3]:  # Y button → Wrist left
             pose_msg = Int8()
             pose_msg.data = 4
             self.pose_publisher_.publish(pose_msg)
-            self.get_logger().info(f"Sent pose number {pose_msg} goal")
+            self.get_logger().info(f"Sent pose number {pose_msg.data} goal")
         '''elif msg.buttons[10]:  # R button → Pinch
             pose_msg = Int8()
             pose_msg.data = 2

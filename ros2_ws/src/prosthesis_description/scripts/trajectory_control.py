@@ -107,7 +107,7 @@ class TrajectoryControlNode(Node):
         joint_updates[self.thumb_indexes[0]] = self.last_joint_states.position[5] - 1.4
         # Thumb Y
         for i in self.thumb_indexes[1::]:
-            joint_updates[i] = self.last_joint_states.position[i] - 1.4
+            joint_updates[i] = self.last_joint_states.position[i] - 1
         
         self.send_pose_trajectory(joint_updates, goal_name="Hand Open")
 
@@ -134,7 +134,7 @@ class TrajectoryControlNode(Node):
             joint_updates[i] = self.last_joint_states.position[i] + 1.2
         # Thumb Y
         for i in self.thumb_indexes[1::]:
-            joint_updates[i] = self.last_joint_states.position[i] + 1.4
+            joint_updates[i] = self.last_joint_states.position[i] + 1
         for i in self.middle_indexes:
             joint_updates[i] = self.last_joint_states.position[i] - 1.2
         for i in self.ring_indexes:

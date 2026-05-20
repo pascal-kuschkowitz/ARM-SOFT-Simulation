@@ -5,63 +5,88 @@ on the received position and orientation of the objet'''
 
 import rclpy
 from rclpy.node import Node
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from std_msgs.msg import Float64MultiArray
+from trajectory_msgs.msg import JointTrajectory
+from std_msgs.msg import Int8
+
 
 class CvArmMoverNode(Node):
-    
+
     def __init__(self):
         super().__init__('cv_arm_mover')
 
-        self.arm_moved = False
+        self.base_pose = None
+        self.hand_pose = None
 
-        self.cv_model_subscription_ = self.create_subscription(
-            Float64MultiArray, '/cv/model', self.cv_model_callback, 10
+        self.received_base_pose = False
+        self.received_hand_pose = False
+
+        self.base_timer = None
+        self.hand_timer = None
+
+        self.cv_base_subscription_ = self.create_subscription(
+            JointTrajectory,
+            '/cv/base/pose',
+            self.cv_base_callback,
+            10
         )
 
-        self.arm_movement_publisher_ = self.create_publisher(
-            JointTrajectory, '/joint_trajectory_controller/joint_trajectory', 10
+        self.cv_hand_subscription_ = self.create_subscription(
+            Int8,
+            '/cv/hand/pose',
+            self.cv_hand_callback,
+            10
+        )
+
+        self.base_publisher_ = self.create_publisher(
+            JointTrajectory,
+            '/joint_trajectory_controller/joint_trajectory',
+            10
+        )
+
+        self.hand_publisher_ = self.create_publisher(
+            Int8,
+            '/pose_goals',
+            10
         )
 
         self.get_logger().info("cv_arm_mover node initialized")
 
-
-    def cv_model_callback(self, msg):
+    def cv_base_callback(self, msg):
         
-        x = msg.data[1] #x
-        y = msg.data[2] #y
-        z = msg.data[3] #z
-        r = msg.data[4] #roll
-        p = msg.data[5] #pitch
-        y = msg.data[6] #yaw
+        self.base_pose = msg
+        self.received_base_pose = True
 
-        trajectory = JointTrajectory()
-        trajectory.joint_names.append('joint_base_x')
-        trajectory.joint_names.append('joint_base_y')
-        trajectory.joint_names.append('joint_base_z')
-        trajectory.joint_names.append('joint_base_roll')
-        trajectory.joint_names.append('joint_base_pitch')
-        trajectory.joint_names.append('joint_base_yaw')
-        point = JointTrajectoryPoint()
-        point.positions.append(x)
-        point.positions.append(y)
-        point.positions.append(z)
-        point.positions.append(r)
-        point.positions.append(p)
-        point.positions.append(y)
-        trajectory.points.append(point)
+        self.try_send_commands()
 
+    def cv_hand_callback(self, msg):
+        self.hand_pose = msg
+        self.received_hand_pose = True
 
-        if self.arm_moved:
-            self.get_logger().info('Arm already moved')
+        self.try_send_commands()
+
+    def try_send_commands(self):
+
+        # Wait until both messages are received
+        if not (self.received_base_pose and self.received_hand_pose):
             return
-        else:
-            self.arm_movement_publisher_.publish(trajectory)
-            self.arm_moved = True
-            self.get_logger().info(
-                f'Moving arm at ({x}, {y}, {z}) '
-                f'with orientation (R={r:.3f}, P={p:.3f}, Y={y:.3f})'
-            )
+
+        # Create timers only once
+        if self.base_timer is None:
+            self.base_timer = self.create_timer(3.0, self.publish_base_pose)
+        if self.hand_timer is None:
+            self.hand_timer = self.create_timer(6.0, self.publish_hand_pose)
+
+    def publish_hand_pose(self):
+
+        self.get_logger().info("Publishing hand pose")
+        self.hand_publisher_.publish(self.hand_pose)
+        self.hand_timer.cancel()
+    
+    def publish_base_pose(self):
+        
+        self.get_logger().info("Publishing base trajectory")
+        self.base_publisher_.publish(self.base_pose)
+        self.base_timer.cancel()
 
 def main():
     rclpy.init()

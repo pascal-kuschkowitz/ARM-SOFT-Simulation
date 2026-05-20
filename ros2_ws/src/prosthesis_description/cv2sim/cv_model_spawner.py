@@ -3,6 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Int8
 import subprocess
 import os
 from ament_index_python.packages import get_package_share_directory
@@ -18,10 +19,16 @@ class CvModelSpawnerNode(Node):
         
         self.model_spawned = False
         
-        self.subscription = self.create_subscription(
+        self.model_pose_sub = self.create_subscription(
             Float64MultiArray,
-            '/cv/model',
+            '/cv/model/pose',
             self.pose_callback,
+            10
+        )
+
+        self.model_feedback_pub = self.create_publisher(
+            Int8,
+            '/cv/model/pose/feedback',
             10
         )
         
@@ -77,7 +84,13 @@ class CvModelSpawnerNode(Node):
             subprocess.run(cmd, check=True)
             self.model_spawned = True
             self.get_logger().info(f'Model spawned successfully in world: {self.world_name}')
+            msg = Int8()
+            msg.data = 1
+            self.model_feedback_pub.publish(msg)
         except subprocess.CalledProcessError as e:
+            msg = Int8()
+            msg.data = 0
+            self.model_feedback_pub.publish(msg)
             self.get_logger().error(f'Error spawning model: {e}')
 
 
