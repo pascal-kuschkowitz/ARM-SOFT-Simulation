@@ -2,13 +2,17 @@
 
 ## About the project 
 The aim of this project is to simulate the prosthesis using a physics engine that allows real-time control via electromyography (EMG), electroencephalography signals (EEG) and computer vision (CV). The simulation is based on ROS2 and Gazebo and includes a model of the prosthesis, as well as tools for visualizing and controlling the prosthesis in real-time.
-<img width="656" height="378" alt="Screenshot from 2026-05-10 00-24-41" src="https://github.com/user-attachments/assets/f0265cb8-bad2-442c-becc-10d9b63f78e6" />
+
+<img width="608" height="479" alt="image" src="https://github.com/user-attachments/assets/4440bb8d-3b1b-4db5-899d-c14da3893469" />
+
+<img width="608" height="479" alt="image" src="https://github.com/user-attachments/assets/7fe21d14-6b3a-48fc-a8db-e14d7acb2f92" />
 
 ## Structure of the repository 
 
 The repository is organized into several directories, each containing specific components of the project:
 - `src/`: Contains the source code for the ROS2 nodes, including control algorithms, sensor data processing, and communication interfaces.
 - `launch/`: Contains ROS2 launch files for starting the simulation and related nodes.
+- `cv2sim/`: Contains script for usage with Computer Vision and files for their objects description
 - `model/`: Contains the URDF (Unified Robot Description Format) files that describe the physical structure and properties of the prosthesis.
 - `meshes/`: Contains the 3D models of the prosthesis components used in the simulation.
 - `config/`: Contains configuration files for ROS2 nodes, including parameters for control algorithms and sensor processing.
@@ -63,6 +67,7 @@ source install/setup.bash
 ros2 launch prosthesis_description gazebo.launch.py
 ```
 
+
 To move the prosthesis base (arm) with your keyboard open a new terminal and run : 
 ```
 source install/setup.bash
@@ -76,7 +81,7 @@ Or to move the prosthesis base (arm) with a gamepad controller open a new termin
 source install/setup.bash
 ros2 run joy joy_node --ros-args --params-file src/prosthesis_description/config/joy_node.yaml
 ```
-Open another terminal and run :
+Open another terminal and also run :
 ```source install/setup.bash
 ros2 run prosthesis_description gamepad_control.py
 ```
@@ -89,13 +94,34 @@ source install/setup.bash
 ros2 run rqt_joint_trajectory_controller rqt_joint_trajectory_controller
 ```
 
-
 To send back the resulting current on each finger and wrist on a dedicated topic, open a new terminal and run :
 ```
 source install/setup.bash
 ros2 run prosthesis_description sensor_data_extractor.py
 ```
+#### Simulation X Computer Vision
+To sart the simulation in Gazebo go into ros2_ws and run :
+```
+colcon build
+source install/setup.bash
+ros2 launch prosthesis_description gazebo.launch.py
+```
+To spawn the cylinder or cube transmitted by CV open a new terminal and run :
+```
+source install/setup.bash
+ros2 run prosthesis_description cv_model_spawner.py
+```
+To move the arm to the object and grap it open a new terminal and run : 
+```
+source install/setup.bash
+ros2 run prosthesis_description cv_arm_mover.py
+```
 
+From the Computer Vision side, simply open a terminal and run :
+```
+source /opt/ros/humble/setup.bash
+python3 test/test_lineset_live_shape.py
+```
 
 ## Contributions
 We welcome all contributions. Please open an issue in the repo or fork, edit, and open a pull request. Please read section [CONTRIBUTING](profile/CONTRIBUTING.md).
