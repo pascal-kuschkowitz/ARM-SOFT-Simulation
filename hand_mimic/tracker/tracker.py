@@ -81,7 +81,7 @@ def main():
     ap.add_argument("--no-send", action="store_true")
     args = ap.parse_args()
     sock = None if args.no_send else socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    seq = 0
+    seq, send_err = 0, False
     if sock:
         print(f"sending UDP to {args.host}:{args.port}")
 
@@ -138,8 +138,10 @@ def main():
             pkt = dict(v=1, seq=seq, t=time.time(), **msg)
             try:
                 sock.sendto(json.dumps(pkt).encode(), (args.host, args.port))
-            except OSError:
-                pass   # VM down / network hiccup: keep tracking
+            except OSError as e:   # VM down / network hiccup: keep tracking, but say so once
+                if not send_err:
+                    print(f"UDP send error (will keep trying silently): {e}", flush=True)
+                    send_err = True
         if args.print and time.time() - t_print >= 1.0:
             t_print = time.time()
             if msg["hand"]:
