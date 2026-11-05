@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Hand-mimic tracker: webcam -> MediaPipe HandLandmarker -> 16 prosthesis joint angles (P3: no network yet)."""
-import argparse, math, os, time, urllib.request
+import argparse, json, math, os, socket, time, urllib.request
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -76,7 +76,14 @@ def main():
     ap.add_argument("--camera", type=int, default=0)
     ap.add_argument("--fullscreen", action="store_true")
     ap.add_argument("--print", action="store_true", help="print mapped joints once per second")
+    ap.add_argument("--host", default=os.environ.get("SIM_HOST", "127.0.0.1"))
+    ap.add_argument("--port", type=int, default=5005)
+    ap.add_argument("--no-send", action="store_true")
     args = ap.parse_args()
+    sock = None if args.no_send else socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    seq = 0
+    if sock:
+        print(f"sending UDP to {args.host}:{args.port}")
 
     ensure_model()
     opts = vision.HandLandmarkerOptions(
@@ -126,6 +133,13 @@ def main():
                 present = False
 
         msg = frame_to_msg(present, last_world)
+        if sock:
+            seq += 1
+            pkt = dict(v=1, seq=seq, t=time.time(), **msg)
+            try:
+                sock.sendto(json.dumps(pkt).encode(), (args.host, args.port))
+            except OSError:
+                pass   # VM down / network hiccup: keep tracking
         if args.print and time.time() - t_print >= 1.0:
             t_print = time.time()
             if msg["hand"]:
