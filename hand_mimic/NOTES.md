@@ -39,3 +39,5 @@ Checked from the Mac side. VM-side items are still open (marked TODO).
   - Gotcha: commanding exactly ±1.57 on wrist_x with fingers curled once got stuck (wrist would not come back); 1.5 is fine. Bridge on MIMIC entry must reset wrist to 0 (works from the thumbs-up pose).
   - Gotcha: only one `gazebo.launch.py` at a time; kill orphan nodes (`ros2 node list | sort | uniq -c`).
   - peace: thumb tuck settles a bit inconsistent (collisions with curled fingers); fine as fallback.
+
+- **P1 final (2026-11-06): `IDLE_POSE = "peace"`** (user-confirmed good in Gazebo). Thumbs up judged unnatural by user: thumb hangs −z from palm, so "thumb up" needs either wrist_x=−1.5 + thumb_1_x≈1.5 (thumb swings across palm) or wrist_y=−1.5 + thumb_1_y=1.5 (wrist bent back 90°). No natural combo exists within joint limits (kinematic search). `thumbs_up` pose kept in POSES (roll+swing variant). A URDF thumb-origin change would be needed for a natural one (out of scope).

@@ -19,7 +19,7 @@ THUMB = ['joint_thumb_1_x', 'joint_thumb_1_y', 'joint_thumb_2', 'joint_thumb_3']
 WRIST = ['joint_wrist_x', 'joint_wrist_y']
 
 # Wrist values that make the thumb point "up" in the default camera view. TUNE ON VM.
-THUMBS_UP_WRIST_X = 1.5
+THUMBS_UP_WRIST_X = -1.5  # roll forearm: palm faces sideways, thumb side up
 THUMBS_UP_WRIST_Y = 0.0
 
 
@@ -38,13 +38,13 @@ POSES = {
     'open': _pose(),
     'fist': _pose(curl=(1.5,) * 4, thumb=(0.8, 0.5, 0.8, 0.8)),
     # four fingers curled, thumb straight out
-    'thumbs_up': _pose(curl=(1.45,) * 4, thumb=(0.0, 0.0, 0.0, 0.0),
+    'thumbs_up': _pose(curl=(1.45,) * 4, thumb=(1.5, 0.0, 0.2, 0.2),
                        wrist=(THUMBS_UP_WRIST_X, THUMBS_UP_WRIST_Y)),
     # index+middle straight, ring+little curled, thumb tucked across them
     'peace': _pose(curl=(0.0, 0.0, 1.5, 1.5), thumb=(1.0, 0.3, 0.8, 0.8)),
 }
 
-IDLE_POSE = 'thumbs_up'  # switch to 'peace' if thumbs up looks bad
+IDLE_POSE = 'peace'  # thumbs_up is geometrically awkward on this model (thumb hangs down from palm); see NOTES.md
 
 
 def make_trajectory(pose, seconds):
