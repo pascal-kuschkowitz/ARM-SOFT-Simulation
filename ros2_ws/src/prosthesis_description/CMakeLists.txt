@@ -28,7 +28,7 @@ install(
 )
 install(
   PROGRAMS scripts/keyboard_control.py scripts/trajectory_control.py scripts/motor_currents_extractor.py 
-  scripts/gamepad_control.py cv2sim/cv_model_spawner.py cv2sim/cv_arm_mover.py scripts/demo_poses.py
+  scripts/gamepad_control.py cv2sim/cv_model_spawner.py cv2sim/cv_arm_mover.py scripts/demo_poses.py scripts/hand_mimic_bridge.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

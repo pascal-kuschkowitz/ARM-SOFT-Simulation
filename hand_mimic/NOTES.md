@@ -41,3 +41,6 @@ Checked from the Mac side. VM-side items are still open (marked TODO).
   - peace: thumb tuck settles a bit inconsistent (collisions with curled fingers); fine as fallback.
 
 - **P1 final (2026-11-06): `IDLE_POSE = "peace"`** (user-confirmed good in Gazebo). Thumbs up judged unnatural by user: thumb hangs −z from palm, so "thumb up" needs either wrist_x=−1.5 + thumb_1_x≈1.5 (thumb swings across palm) or wrist_y=−1.5 + thumb_1_y=1.5 (wrist bent back 90°). No natural combo exists within joint limits (kinematic search). `thumbs_up` pose kept in POSES (roll+swing variant). A URDF thumb-origin change would be needed for a natural one (out of scope).
+
+- **P2 (VM, 2026-11-06) DONE.** `hand_mimic_bridge.py` + `tools/fake_sender.py` (modes wave|fist|open|off|blink). Verified headlessly via `/joint_states` with `--mode blink`: waves while hand, returns to peace idle ~1 s after the sender stops, survives `echo junk | nc -u`.
+  Run: `ros2 run prosthesis_description hand_mimic_bridge.py` (params: port, alpha, rate_hz, hand_timeout_s, idle_resend_s, idle_pose, allow_wrist). Only one bridge instance can bind UDP 5005. Model limits: see LIMITATIONS.md.
