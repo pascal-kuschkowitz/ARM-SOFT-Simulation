@@ -10,8 +10,8 @@ Checked from the Mac side. VM-side items are still open (marked TODO).
   **TODO: user must OK pushing `add/visualization-for-scientastic`** (or pick (b)/(c)). Not pushed.
   Note: `hand_mimic/` is currently untracked (packets not committed).
 - **Remote Login (SSH) on Mac**: not checked (needs admin); only needed for sync option (b).
-- **VM IP (`SIM_HOST`)**: TODO. In VM: `ip -4 addr | grep 192.168`. No `192.168.64.x` bridge visible on the Mac now (VM probably not running).
-- **UDP Mac → VM on 5005**: TODO. VM: `nc -ul 5005`; Mac: `echo hello | nc -u -w1 <VM_IP> 5005`.
+- **VM IP (`SIM_HOST`)**: `192.168.64.5` (user `pengu@pengus-vm`, iface enp0s1, UTM Shared Network; Mac side is `192.168.64.1` on bridge100). May change via DHCP — re-check if it stops working.
+- **UDP Mac → VM on 5005**: OK (2026-11-05, verified by user). Gotcha: send to the VM IP, not the .255 broadcast address.
 - **Sim RTF / GUI usability**: TODO (VM).
 - **Controller streaming test (step 5)**: TODO (VM).
 - **External monitor full-screen**: TODO (user).
