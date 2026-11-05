@@ -1,0 +1,3 @@
+.venv/
+*.task
+__pycache__/

@@ -44,3 +44,8 @@ Checked from the Mac side. VM-side items are still open (marked TODO).
 
 - **P2 (VM, 2026-11-06) DONE.** `hand_mimic_bridge.py` + `tools/fake_sender.py` (modes wave|fist|open|off|blink). Verified headlessly via `/joint_states` with `--mode blink`: waves while hand, returns to peace idle ~1 s after the sender stops, survives `echo junk | nc -u`.
   Run: `ros2 run prosthesis_description hand_mimic_bridge.py` (params: port, alpha, rate_hz, hand_timeout_s, idle_resend_s, idle_pose, allow_wrist). Only one bridge instance can bind UDP 5005. Model limits: see LIMITATIONS.md.
+
+- **P3 (2026-11-06) code DONE, NOT run against a real camera** (written in the Linux VM session: no webcam, no mediapipe installed here — only py_compile + synthetic-landmark check of the angle math).
+  `tracker/tracker.py` (`frame_to_msg(present, world)` → `{"hand","joints"}` for P4; `CAL` dict at top), `tools/udp_dump.py`, `.gitignore`. Debounce 3 hits / 5 misses.
+  Thumb: used P1 semantics rather than the packet defaults: `thumb_1_x` = opposition (CAL raw 0..1), `thumb_1_y` = bend(0,1,2) (CMC flexion, CAL raw 0.1..1.0). Crude — P4 must tune on the real hand.
+  Mac: use `/opt/homebrew/bin/python3.12` for the venv; requirements.txt is unpinned (pin after first successful install).
