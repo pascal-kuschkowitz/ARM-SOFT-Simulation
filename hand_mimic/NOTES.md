@@ -49,3 +49,4 @@ Checked from the Mac side. VM-side items are still open (marked TODO).
   `tracker/tracker.py` (`frame_to_msg(present, world)` → `{"hand","joints"}` for P4; `CAL` dict at top), `tools/udp_dump.py`, `.gitignore`. Debounce 3 hits / 5 misses.
   Thumb: used P1 semantics rather than the packet defaults: `thumb_1_x` = opposition (CAL raw 0..1), `thumb_1_y` = bend(0,1,2) (CMC flexion, CAL raw 0.1..1.0). Crude — P4 must tune on the real hand.
   Mac: use `/opt/homebrew/bin/python3.12` for the venv; requirements.txt is unpinned (pin after first successful install).
+- **P3 (2026-11-06)**: user confirmed tracker works on the Mac with the real camera and is fast. requirements.txt pinned to opencv-python 5.0.0.93 / mediapipe 1.2.2 / numpy 2.5.4 (resolved by a fresh pip install on the Linux VM, not read from the Mac venv — if the Mac differs, re-pin from `pip freeze` there).
