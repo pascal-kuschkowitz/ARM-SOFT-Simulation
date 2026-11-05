@@ -26,3 +26,16 @@ Checked from the Mac side. VM-side items are still open (marked TODO).
 - Wrist: `joint_wrist_x` axis x (forearm roll, pronation/supination), `joint_wrist_y` axis y (flex/extension). Which sign points the thumb up in the camera view: **TODO on VM** —
   tune `THUMBS_UP_WRIST_X/Y` at top of demo_poses.py (currently 0).
 - TODO on VM: `colcon build`, run `demo_poses.py cycle` and `sweep <joint>`, fix values, check collisions/jitter, check `/joint_states`, update this entry.
+
+- **P1 (VM, 2026-11-05, partial)**: `colcon build` OK, `demo_poses.py` is installed and visible to `ros2 pkg executables`. Measured via tf (world frame) at rest: palm +x = fingers, thumb base
+  at palm (0.07, 0.04), thumb hangs along −z at rest. `thumb_1_x`=0.8 moves thumb tip toward −y (0.046→0.004), `thumb_1_y`/`thumb_2` flex tip toward +x. `thumb_3` showed no tf change (unreliable run).
+  `joint_wrist_y`=−1.57 turns the fingers to point up (+z); `+1.57` points them down/sideways. Wrist_x sign not determined.
+  **Gotcha:** two `gazebo.launch.py` instances at once (duplicate nodes) make `/joint_states`/commands erratic ("Moved backwards in time"). Always run exactly one.
+  Thumbs-up/peace values still untuned; sim was left in a bad state (no `/joint_states`) — needs a clean relaunch.
+
+- **P1 (VM, 2026-11-05) DONE.** Verified via tf (world frame), not eyes. `IDLE_POSE = "thumbs_up"`, `THUMBS_UP_WRIST_X = 1.5`, wrist_y 0, fingers 1.45, thumb joints 0.
+  - `joint_wrist_x` = forearm roll. **+** rolls the thumb to the top (thumb tip z +0.05 vs index tip +0.04, curled ring tip ~0); **−** rolls it down/toward −y. `joint_wrist_y` = flexion; **−1.57 points fingers up**, + points them down.
+  - Thumb: at 0 it hangs −z from palm (0.07, 0.04). `thumb_1_x` (+) swings it toward −y (across palm); `thumb_1_y`/`thumb_2` (+) flex tip toward +x. P3/P4 should map thumb "curl" mainly to `thumb_1_y/2/3`, thumb "across palm" to `thumb_1_x`.
+  - Gotcha: commanding exactly ±1.57 on wrist_x with fingers curled once got stuck (wrist would not come back); 1.5 is fine. Bridge on MIMIC entry must reset wrist to 0 (works from the thumbs-up pose).
+  - Gotcha: only one `gazebo.launch.py` at a time; kill orphan nodes (`ros2 node list | sort | uniq -c`).
+  - peace: thumb tuck settles a bit inconsistent (collisions with curled fingers); fine as fallback.

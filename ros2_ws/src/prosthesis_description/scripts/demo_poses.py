@@ -3,8 +3,7 @@
 
   ros2 run prosthesis_description demo_poses.py thumbs_up|peace|open|fist|cycle|sweep <joint>
 
-!! Joint values below are first guesses from the URDF axes (not yet checked in Gazebo).
-   Tune them on the VM with `cycle` / `sweep`, then update NOTES.md.
+Values verified on VM via tf (thumbs_up: wrist_x=1.5 rolls thumb to the top).
 """
 import sys
 import time
@@ -20,7 +19,7 @@ THUMB = ['joint_thumb_1_x', 'joint_thumb_1_y', 'joint_thumb_2', 'joint_thumb_3']
 WRIST = ['joint_wrist_x', 'joint_wrist_y']
 
 # Wrist values that make the thumb point "up" in the default camera view. TUNE ON VM.
-THUMBS_UP_WRIST_X = 0.0
+THUMBS_UP_WRIST_X = 1.5
 THUMBS_UP_WRIST_Y = 0.0
 
 
