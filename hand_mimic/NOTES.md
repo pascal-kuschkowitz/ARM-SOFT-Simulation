@@ -16,3 +16,13 @@ Checked from the Mac side. VM-side items are still open (marked TODO).
 - **Controller streaming test (step 5)**: OK (user confirmed; index finger bends via /joint_trajectory_controller/joint_trajectory).
 - **External monitor full-screen**: not checked; user judged unnecessary.
 - **Claude Code in VM**: skipped (optional).
+
+## P1 — idle poses (2026-11-05) — CODE DONE, VISUAL TUNING STILL TODO (written on Mac, no ROS/Gazebo there)
+- `scripts/demo_poses.py` added (POSES open/fist/thumbs_up/peace, `IDLE_POSE="thumbs_up"`, `make_trajectory(pose, seconds)`,
+  CLI `thumbs_up|peace|open|fist|cycle|sweep <joint>`), registered in CMakeLists. Pose values are **guesses from URDF axes**, not verified in sim.
+- Geometry derived from URDF (unverified visually): fingers extend along palm +x and curl about +y (toward palm side, −z). Thumb links hang along −z
+  from `palm_link` at (0.05, 0.04): `thumb_1_x` (axis −x) should swing the thumb sideways toward −y (across the palm toward the fingers = opposition/adduction);
+  `thumb_1_y`, `thumb_2`, `thumb_3` (axis −y) should flex it toward +x (fingertip direction). Thumb joints = 0 → thumb straight (extended).
+- Wrist: `joint_wrist_x` axis x (forearm roll, pronation/supination), `joint_wrist_y` axis y (flex/extension). Which sign points the thumb up in the camera view: **TODO on VM** —
+  tune `THUMBS_UP_WRIST_X/Y` at top of demo_poses.py (currently 0).
+- TODO on VM: `colcon build`, run `demo_poses.py cycle` and `sweep <joint>`, fix values, check collisions/jitter, check `/joint_states`, update this entry.
