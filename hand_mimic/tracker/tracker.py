@@ -21,9 +21,30 @@ JOINT_NAMES = [f"joint_{f}_{i}" for f in FINGERS for i in (1, 2, 3)] + \
 CAL = {n: (0.1, 1.5) for n in JOINT_NAMES}
 CAL["joint_thumb_1_x"] = (0.0, 1.0)   # raw = opposition 0..1
 CAL["joint_thumb_1_y"] = (0.1, 1.0)   # raw = CMC flexion (rad)
+CAL["joint_thumb_2"] = (1.1, 0.4)     # raw = tip->index-MCP distance / palm size (open -> closed)
+CAL["joint_thumb_3"] = (1.1, 0.4)
+CALIB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calib.json")
 
 BONES = [(0,1),(1,2),(2,3),(3,4),(0,5),(5,6),(6,7),(7,8),(5,9),(9,10),(10,11),(11,12),
          (9,13),(13,14),(14,15),(15,16),(13,17),(17,18),(18,19),(19,20),(0,17)]
+
+
+def load_calib():
+    try:
+        with open(CALIB_PATH) as f:
+            for k, v in json.load(f).items():
+                if k in CAL:
+                    CAL[k] = tuple(v)
+        print(f"loaded {CALIB_PATH}")
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        print(f"ignoring bad calib.json: {e}")
+
+
+def save_calib():
+    with open(CALIB_PATH, "w") as f:
+        json.dump(CAL, f, indent=1)
 
 
 def ensure_model():
@@ -43,6 +64,8 @@ def bend(a, b, c):
 
 def mapc(name, raw):
     lo, hi = CAL[name]
+    if abs(hi - lo) < 1e-6:
+        return 0.0
     t = (raw - lo) / (hi - lo)
     return float(np.clip(t, 0.0, 1.0) * MAX_ANGLE)
 
@@ -54,8 +77,12 @@ def raw_angles(w):
         r[f"joint_{f}_1"] = bend(w[0], w[mcp], w[mcp + 1])
         r[f"joint_{f}_2"] = bend(w[mcp], w[mcp + 1], w[mcp + 2])
         r[f"joint_{f}_3"] = bend(w[mcp + 1], w[mcp + 2], w[mcp + 3])
-    r["joint_thumb_2"] = bend(w[1], w[2], w[3])
-    r["joint_thumb_3"] = bend(w[2], w[3], w[4])
+    # Thumb curl from distance (tip -> index MCP) / palm size: much less depth-sensitive than bend angles
+    # (when the thumb points along the camera axis, the angles are garbage). Open ~1.1, fist ~0.4.
+    palm0 = np.linalg.norm(w[0] - w[9]) + 1e-9
+    curl = float(np.linalg.norm(w[4] - w[5]) / palm0)
+    r["joint_thumb_2"] = curl
+    r["joint_thumb_3"] = curl
     # Per NOTES (P1): thumb_1_x swings thumb across palm (opposition); thumb_1_y flexes toward fingertips.
     palm = np.linalg.norm(w[0] - w[9]) + 1e-9
     r["joint_thumb_1_x"] = 1.0 - float(np.clip(np.linalg.norm(w[4] - w[17]) / palm / 1.6, 0, 1))
@@ -86,6 +113,9 @@ def main():
         print(f"sending UDP to {args.host}:{args.port}")
 
     ensure_model()
+    load_calib()
+    last_raw = None
+    note, note_until = "", 0.0
     opts = vision.HandLandmarkerOptions(
         base_options=mp_python.BaseOptions(model_asset_path=MODEL_PATH),
         running_mode=vision.RunningMode.VIDEO, num_hands=1)
@@ -119,6 +149,7 @@ def main():
         if detected:
             hits, misses = hits + 1, 0
             last_world = np.array([[p.x, p.y, p.z] for p in res.hand_world_landmarks[0]])
+            last_raw = raw_angles(last_world)
             if hits >= PRESENT_AFTER:
                 present = True
             h, w = frame.shape[:2]
@@ -155,9 +186,21 @@ def main():
         cv2.putText(frame, f"FPS {fps:4.1f}", (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         text, color = ("Tracking", (0, 200, 0)) if present else ("Show your hand to the camera", (0, 140, 255))
         cv2.putText(frame, text, (10, frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.1, color, 3)
+        if time.time() < note_until:
+            cv2.putText(frame, note, (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
         cv2.imshow(win, frame)
-        if (cv2.waitKey(1) & 0xFF) in (ord("q"), 27):
+        key = cv2.waitKey(1) & 0xFF
+        if key in (ord("q"), 27):
             break
+        if key in (ord("c"), ord("f")) and present and last_raw:
+            idx = 0 if key == ord("c") else 1     # c = open hand, f = fist
+            for n in JOINT_NAMES:
+                pair = list(CAL[n])
+                pair[idx] = round(last_raw[n], 3)
+                CAL[n] = tuple(pair)
+            save_calib()
+            note, note_until = ("saved OPEN pose" if idx == 0 else "saved FIST pose"), time.time() + 2
+            print(note, flush=True)
     cap.release()
     cv2.destroyAllWindows()
 
